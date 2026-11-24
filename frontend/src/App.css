@@ -792,6 +792,38 @@
   font-size: 9px;
 }
 
+.event-admin-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #edf0e9;
+  display: flex;
+  gap: 14px;
+}
+
+.event-admin-actions button {
+  padding: 0;
+  border: 0;
+  color: #46624e;
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.event-admin-actions button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.event-admin-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.event-admin-actions .event-delete-button {
+  color: #9b4b40;
+}
+
 .button-card,
 .button-registered {
   min-height: 34px;

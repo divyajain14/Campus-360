@@ -53,6 +53,14 @@ function formatEventDate(value) {
   }
 }
 
+function formatDateTimeInput(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return localDate.toISOString().slice(0, 16)
+}
+
 function App() {
   const [session, setSession] = useState(getStoredSession)
   const [events, setEvents] = useState([])
@@ -62,6 +70,7 @@ function App() {
   const [search, setSearch] = useState('')
   const [authMode, setAuthMode] = useState(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(null)
   const [busyEventId, setBusyEventId] = useState(null)
   const [authError, setAuthError] = useState('')
   const [authSuccess, setAuthSuccess] = useState('')
@@ -226,11 +235,12 @@ function App() {
     }
   }
 
-  async function handleCreateEvent(event) {
+  async function handleSaveEvent(event) {
     event.preventDefault()
     setCreateError('')
     const formElement = event.currentTarget
     const form = new FormData(formElement)
+    const isEditing = Boolean(editingEvent)
     const localDate = new Date(String(form.get('date')))
 
     if (Number.isNaN(localDate.getTime())) {
@@ -247,20 +257,64 @@ function App() {
     }
 
     try {
-      const newEvent = await apiRequest('/api/events', {
-        method: 'POST',
-        token: session.token,
-        body: JSON.stringify(body),
+      const savedEvent = await apiRequest(
+        isEditing ? `/api/events/${editingEvent._id}` : '/api/events',
+        {
+          method: isEditing ? 'PUT' : 'POST',
+          token: session.token,
+          body: JSON.stringify(body),
+        },
+      )
+      setEvents((current) => {
+        const next = isEditing
+          ? current.map((item) => item._id === savedEvent._id ? savedEvent : item)
+          : [...current, savedEvent]
+        return next.sort((a, b) => new Date(a.date) - new Date(b.date))
       })
-      setEvents((current) => [...current, newEvent].sort(
-        (a, b) => new Date(a.date) - new Date(b.date),
-      ))
       setShowCreateForm(false)
+      setEditingEvent(null)
       formElement.reset()
-      setNotice({ type: 'success', text: 'Your event is live.' })
+      setNotice({
+        type: 'success',
+        text: isEditing ? 'Event changes saved.' : 'Your event is live.',
+      })
     } catch (error) {
       setCreateError(error.message)
     }
+  }
+
+  async function handleDeleteEvent(event) {
+    const confirmed = window.confirm(
+      `Delete "${event.title}"? This will also remove its registrations.`,
+    )
+    if (!confirmed) return
+
+    setBusyEventId(event._id)
+    try {
+      await apiRequest(`/api/events/${event._id}`, {
+        method: 'DELETE',
+        token: session.token,
+      })
+      setEvents((current) => current.filter((item) => item._id !== event._id))
+      setRegistrations((current) => current.filter((registration) => {
+        const registeredEvent = registration.eventId
+        const registeredEventId = typeof registeredEvent === 'object' && registeredEvent
+          ? registeredEvent._id
+          : registeredEvent
+        return registeredEventId !== event._id
+      }))
+      setNotice({ type: 'success', text: 'Event and its registrations were deleted.' })
+    } catch (error) {
+      setNotice({ type: 'error', text: error.message })
+    } finally {
+      setBusyEventId(null)
+    }
+  }
+
+  function closeEventForm() {
+    setShowCreateForm(false)
+    setEditingEvent(null)
+    setCreateError('')
   }
 
   return (
@@ -349,6 +403,7 @@ function App() {
             {session?.user.role === 'admin' && (
               <button className="button button-dark" onClick={() => {
                 setCreateError('')
+                setEditingEvent(null)
                 setShowCreateForm(true)
               }}>
                 <span aria-hidden="true">+</span> Create event
@@ -442,6 +497,28 @@ function App() {
                                 : 'Join to attend'}
                         </button>
                       </div>
+                      {session?.user.role === 'admin' && (
+                        <div className="event-admin-actions">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCreateError('')
+                                    setEditingEvent(event)
+                                    setShowCreateForm(true)
+                                  }}
+                                >
+                                  Edit event
+                                </button>
+                                <button
+                                  type="button"
+                                  className="event-delete-button"
+                                  onClick={() => handleDeleteEvent(event)}
+                                  disabled={busyEventId === event._id}
+                                >
+                                  {busyEventId === event._id ? 'Please wait...' : 'Delete event'}
+                                </button>
+                        </div>
+                      )}
                     </div>
                   </article>
                 )
@@ -542,23 +619,27 @@ function App() {
 
       {showCreateForm && (
         <div className="modal-backdrop" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setShowCreateForm(false)
+          if (event.target === event.currentTarget) closeEventForm()
         }}>
           <section className="dialog-card create-dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
-            <button className="dialog-close" onClick={() => setShowCreateForm(false)} aria-label="Close dialog">x</button>
+            <button className="dialog-close" onClick={closeEventForm} aria-label="Close dialog">x</button>
             <p className="eyebrow eyebrow-dark">ADMIN EVENT TOOLS</p>
-            <h2 id="create-title">Put something on.</h2>
-            <p className="dialog-intro">Create an event for the campus community.</p>
+            <h2 id="create-title">{editingEvent ? 'Update the details.' : 'Put something on.'}</h2>
+            <p className="dialog-intro">
+              {editingEvent ? 'Edit this event for the campus community.' : 'Create an event for the campus community.'}
+            </p>
             {createError && <p className="form-error" role="alert">{createError}</p>}
-            <form className="auth-form" onSubmit={handleCreateEvent}>
-              <label>Event title<input name="title" required maxLength="120" /></label>
-              <label>Description<textarea name="description" rows="3" required maxLength="1000" /></label>
+            <form className="auth-form" onSubmit={handleSaveEvent}>
+              <label>Event title<input name="title" required maxLength="120" defaultValue={editingEvent?.title || ''} /></label>
+              <label>Description<textarea name="description" rows="3" required maxLength="1000" defaultValue={editingEvent?.description || ''} /></label>
               <div className="form-row">
-                <label>Date and time<input name="date" type="datetime-local" required /></label>
-                <label>Capacity<input name="capacity" type="number" min="1" step="1" required /></label>
+                <label>Date and time<input name="date" type="datetime-local" required defaultValue={editingEvent ? formatDateTimeInput(editingEvent.date) : ''} /></label>
+                <label>Capacity<input name="capacity" type="number" min="1" step="1" required defaultValue={editingEvent?.capacity || ''} /></label>
               </div>
-              <label>Venue<input name="venue" required maxLength="120" /></label>
-              <button className="button button-dark button-submit" type="submit">Publish event <span aria-hidden="true">-&gt;</span></button>
+              <label>Venue<input name="venue" required maxLength="120" defaultValue={editingEvent?.venue || ''} /></label>
+              <button className="button button-dark button-submit" type="submit">
+                {editingEvent ? 'Save changes' : 'Publish event'} <span aria-hidden="true">-&gt;</span>
+              </button>
             </form>
           </section>
         </div>

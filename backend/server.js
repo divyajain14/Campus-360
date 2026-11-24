@@ -9,20 +9,47 @@ const registrationRoutes = require("./routes/registrationRoutes");
 
 const app = express();
 
-app.use(cors());
+const CORS_ORIGIN_ERROR = "Origin is not allowed by CORS";
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  "http://localhost:5173,http://127.0.0.1:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(CORS_ORIGIN_ERROR));
+  }
+}));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/registrations", registrationRoutes);
 
-connectDB();
-
 app.get("/", (req, res) => {
   res.send("Campus 360 Backend is Running!");
 });
 
+app.use((error, req, res, next) => {
+  if (error.message === CORS_ORIGIN_ERROR) {
+    return res.status(403).json({ message: CORS_ORIGIN_ERROR });
+  }
+  next(error);
+});
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();
