@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiRequest } from './api'
 import './App.css'
 
@@ -76,6 +76,12 @@ function App() {
   const [authSuccess, setAuthSuccess] = useState('')
   const [createError, setCreateError] = useState('')
   const [notice, setNotice] = useState(null)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatSending, setChatSending] = useState(false)
+  const [chatError, setChatError] = useState('')
+  const chatMessagesRef = useRef(null)
 
   useEffect(() => {
     let active = true
@@ -125,6 +131,12 @@ function App() {
       active = false
     }
   }, [session])
+
+  useEffect(() => {
+    if (chatOpen && chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
+    }
+  }, [chatMessages, chatOpen, chatSending])
 
   const registeredEventIds = useMemo(
     () => new Set(registrations.map((registration) => {
@@ -315,6 +327,34 @@ function App() {
     setShowCreateForm(false)
     setEditingEvent(null)
     setCreateError('')
+  }
+
+  async function sendChatMessage(message) {
+    const text = message.trim()
+    if (!text || chatSending) return
+
+    const history = chatMessages.slice(-8)
+    setChatMessages((current) => [...current, { role: 'user', content: text }])
+    setChatInput('')
+    setChatError('')
+    setChatSending(true)
+
+    try {
+      const result = await apiRequest('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: text, history }),
+      })
+      setChatMessages((current) => [...current, { role: 'model', content: result.reply }])
+    } catch (error) {
+      setChatError(error.message)
+    } finally {
+      setChatSending(false)
+    }
+  }
+
+  function handleChatSubmit(event) {
+    event.preventDefault()
+    sendChatMessage(chatInput)
   }
 
   return (
@@ -643,6 +683,86 @@ function App() {
             </form>
           </section>
         </div>
+      )}
+
+      <button
+        className="chat-launcher"
+        onClick={() => setChatOpen((open) => !open)}
+        aria-expanded={chatOpen}
+        aria-label={chatOpen ? 'Close Campus 360 assistant' : 'Open Campus 360 assistant'}
+      >
+        <span className="chat-launcher-mark" aria-hidden="true">?</span>
+        <span>{chatOpen ? 'Close chat' : 'Ask Campus AI'}</span>
+      </button>
+
+      {chatOpen && (
+        <section className="chat-panel" role="dialog" aria-label="Campus 360 event assistant">
+          <header className="chat-header">
+            <div className="chat-header-mark" aria-hidden="true">C</div>
+            <div>
+              <h2>Campus guide</h2>
+              <p>Ask about events and registration</p>
+            </div>
+            <button
+              className="chat-close"
+              onClick={() => setChatOpen(false)}
+              aria-label="Close chat"
+            >
+              x
+            </button>
+          </header>
+
+          <div className="chat-messages" ref={chatMessagesRef} aria-live="polite">
+            {chatMessages.length === 0 ? (
+              <div className="chat-welcome">
+                <p className="chat-assistant-message">
+                  Hi! I can help you find campus events and explain how to register.
+                </p>
+                <div className="chat-prompts">
+                  <button type="button" onClick={() => sendChatMessage('What events are coming up?')}>
+                    What events are coming up?
+                  </button>
+                  <button type="button" onClick={() => sendChatMessage('How do I register for an event?')}>
+                    How do I register?
+                  </button>
+                </div>
+              </div>
+            ) : (
+              chatMessages.map((message, index) => (
+                <p
+                  className={`chat-message chat-message-${message.role}`}
+                  key={`${message.role}-${index}`}
+                >
+                  {message.content}
+                </p>
+              ))
+            )}
+            {chatSending && <p className="chat-assistant-message chat-typing">Thinking...</p>}
+          </div>
+
+          {chatError && <p className="chat-error" role="alert">{chatError}</p>}
+
+          <form className="chat-form" onSubmit={handleChatSubmit}>
+            <textarea
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault()
+                  event.currentTarget.form?.requestSubmit()
+                }
+              }}
+              maxLength="500"
+              rows="2"
+              placeholder="Ask about campus events..."
+              aria-label="Message Campus 360 assistant"
+            />
+            <button className="button button-dark" type="submit" disabled={chatSending || !chatInput.trim()}>
+              Send
+            </button>
+          </form>
+          <p className="chat-disclaimer">AI answers may be inaccurate. Confirm event details on the cards.</p>
+        </section>
       )}
     </div>
   )

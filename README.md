@@ -9,7 +9,7 @@ Campus 360 helps students discover campus events, register for them, and manage 
 
 ## Run locally
 
-1. In `backend/`, copy `.env.example` to `.env`, then set `MONGO_URI` and a private `JWT_SECRET`.
+1. In `backend/`, copy `.env.example` to `.env`, then set `MONGO_URI`, a private `JWT_SECRET`, and `GEMINI_API_KEY`.
 2. Start the API:
 
    ```powershell
@@ -32,6 +32,7 @@ Campus 360 helps students discover campus events, register for them, and manage 
 ## Deployment configuration
 
 - Backend environment: set `MONGO_URI`, `JWT_SECRET`, the host-provided `PORT`, and `CORS_ORIGINS` to the exact frontend origin(s), comma-separated.
+- Set `GEMINI_API_KEY` in the backend host's private environment settings. Create a key in [Google AI Studio](https://aistudio.google.com/apikey); never put it in Vite variables or commit it to Git.
 - Allow the backend host's outbound IP in MongoDB Atlas Network Access.
 - Build the frontend with `npm run build` from `frontend/` and set `VITE_API_URL` to the deployed backend base URL before building.
 - Keep both `.env` files private; only the `.env.example` templates belong in Git.

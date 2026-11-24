@@ -971,6 +971,217 @@
   height: 7px;
 }
 
+.chat-launcher {
+  position: fixed;
+  z-index: 8;
+  right: 24px;
+  bottom: 22px;
+  min-height: 48px;
+  padding: 0 17px 0 10px;
+  border: 0;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #fff;
+  background: var(--forest);
+  box-shadow: 0 8px 24px rgba(13, 39, 31, 0.25);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-launcher:hover {
+  background: var(--forest-deep);
+}
+
+.chat-launcher-mark,
+.chat-header-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--forest);
+  background: var(--lime);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.chat-panel {
+  position: fixed;
+  z-index: 8;
+  right: 24px;
+  bottom: 82px;
+  width: min(370px, calc(100vw - 32px));
+  max-height: min(570px, calc(100vh - 110px));
+  border: 1px solid #dfe5da;
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f7f8f2;
+  box-shadow: 0 20px 60px rgba(13, 39, 31, 0.22);
+}
+
+.chat-header {
+  min-height: 68px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  background: var(--forest);
+}
+
+.chat-header-mark {
+  flex: 0 0 auto;
+}
+
+.chat-header h2 {
+  margin: 0 0 3px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.chat-header p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 9px;
+}
+
+.chat-close {
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-messages {
+  min-height: 180px;
+  padding: 16px 13px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.chat-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.chat-assistant-message,
+.chat-message {
+  max-width: 88%;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 4px 12px 12px 12px;
+  color: #405247;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(32, 54, 41, 0.05);
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-message-user {
+  align-self: flex-end;
+  border-radius: 12px 4px 12px 12px;
+  color: #fff;
+  background: var(--forest);
+}
+
+.chat-typing {
+  color: #8a9389;
+  font-style: italic;
+}
+
+.chat-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.chat-prompts button {
+  padding: 7px 9px;
+  border: 1px solid #d8e1cf;
+  border-radius: 14px;
+  color: #506646;
+  background: #f0f4e8;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.chat-prompts button:hover {
+  background: #e6eedb;
+}
+
+.chat-error {
+  margin: 0 12px 8px;
+  padding: 8px 10px;
+  border: 1px solid #edc8bd;
+  border-radius: 3px;
+  color: #813e34;
+  background: #fff1ed;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.chat-form {
+  margin: 0 12px;
+  padding: 8px;
+  border: 1px solid #dce2d7;
+  border-radius: 4px;
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  background: #fff;
+}
+
+.chat-form textarea {
+  width: 100%;
+  min-height: 38px;
+  max-height: 96px;
+  padding: 7px;
+  border: 0;
+  outline: 0;
+  resize: vertical;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+}
+
+.chat-form .button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 10px;
+}
+
+.chat-form .button:disabled {
+  opacity: 0.5;
+}
+
+.chat-disclaimer {
+  padding: 7px 12px 10px;
+  color: #919990;
+  font-size: 8px;
+  text-align: center;
+}
+
 .modal-backdrop {
   position: fixed;
   z-index: 10;
@@ -1321,6 +1532,17 @@
 
   .dialog-card {
     padding: 32px 23px 25px;
+  }
+
+  .chat-launcher {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .chat-panel {
+    right: 16px;
+    bottom: 74px;
+    max-height: calc(100vh - 92px);
   }
 
   .dialog-card h2 {

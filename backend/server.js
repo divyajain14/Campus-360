@@ -6,6 +6,7 @@ const connectDB = require("./db");
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (req, res) => {
   res.send("Campus 360 Backend is Running!");
